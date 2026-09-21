@@ -2,6 +2,31 @@
 
 `mihomo-exporter` 用于采集 [Mihomo](https://github.com/MetaCubeX/mihomo) 的实时流量和连接数据，并输出为 Prometheus 指标或推送给 Telegraf。
 
+## 快速上手
+
+如果 Mihomo 使用默认地址 `http://127.0.0.1:9090` 且没有设置 Secret，下载并解压程序后直接运行：
+
+```bash
+./mihomo-exporter
+```
+
+设置了 Secret 时也只需要一行命令：
+
+```bash
+MIHOMO_SECRET=your-secret ./mihomo-exporter
+```
+
+启动后访问：
+
+- Metrics：`http://127.0.0.1:9091/metrics`
+- 健康检查：`http://127.0.0.1:9091/healthz`
+
+Mihomo 地址不同，可以直接通过参数指定：
+
+```bash
+./mihomo-exporter --mihomo-url=http://192.168.1.1:9090
+```
+
 它可以回答这些常见问题：
 
 - Mihomo 当前的上传、下载速率是多少？
@@ -30,6 +55,20 @@ secret: your-secret
 ```
 
 如果 exporter 与 Mihomo 不在同一台机器，请确认防火墙和容器网络允许 exporter 访问该端口。不要把未设置密码的 External Controller 暴露到公网。
+
+## 使用预编译程序
+
+从 [GitHub Releases](https://github.com/tiancheng91/mihomo-exporter/releases) 下载对应系统和架构的压缩包，解压后运行：
+
+```bash
+MIHOMO_URL=http://127.0.0.1:9090 \
+MIHOMO_SECRET=your-secret \
+./mihomo-exporter
+```
+
+Release 页面同时提供 `checksums.txt`，可用于校验下载文件的 SHA-256。
+
+Linux 用户如需开机启动和异常自动重启，可参考 [systemd 服务配置](docs/deployment/systemd.md)。
 
 ## Docker Compose
 
@@ -60,23 +99,6 @@ services:
 ```
 
 该示例假设 Mihomo 运行在宿主机。如果 Mihomo 也运行在同一个 Compose 网络中，请把 `MIHOMO_URL` 改为对应的服务名，例如 `http://mihomo:9090`。
-
-启动后访问：
-
-- Metrics：`http://127.0.0.1:9091/metrics`
-- 健康检查：`http://127.0.0.1:9091/healthz`
-
-## 使用预编译程序
-
-从 [GitHub Releases](https://github.com/tiancheng91/mihomo-exporter/releases) 下载对应系统和架构的压缩包，解压后运行：
-
-```bash
-MIHOMO_URL=http://127.0.0.1:9090 \
-MIHOMO_SECRET=your-secret \
-./mihomo-exporter
-```
-
-Release 页面同时提供 `checksums.txt`，可用于校验下载文件的 SHA-256。
 
 ## Prometheus
 
@@ -184,6 +206,7 @@ mihomo_exporter_stream_connected{stream="connections"}
 ## 更多文档
 
 - [架构设计](docs/design/architecture.md)
+- [systemd 服务配置](docs/deployment/systemd.md)
 - [开发、测试与发布](docs/development.md)
 - [版本变更](CHANGELOG.md)
 - [MIT License](LICENSE)

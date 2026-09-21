@@ -6,9 +6,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- 增加 Linux systemd 服务安装、配置和运维示例。
+
 ### Changed
 
 - GitHub Actions 升级到 Node.js 24 运行时对应版本。
+- README 按从简单到复杂的顺序调整，并增加单行快速启动示例。
 
 ## [0.1.0] - 2026-09-21
 
