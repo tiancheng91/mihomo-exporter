@@ -1,0 +1,13 @@
+services:
+  mihomo-exporter:
+    build: .
+    environment:
+      MIHOMO_URL: http://host.docker.internal:9090
+      MIHOMO_SECRET: ""
+      OUTPUT_PROMETHEUS: "true"
+      OUTPUT_TELEGRAF: "false"
+    ports:
+      - "9091:9091"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

@@ -1,0 +1,5 @@
+/mihomo-exporter
+/dist/
+*.out
+coverage.html
+
