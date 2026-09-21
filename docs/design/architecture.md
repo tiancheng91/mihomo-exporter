@@ -4,7 +4,7 @@
 
 ## 目标与边界
 
-Exporter 持续消费 Mihomo External Controller 的两个 HTTP JSON stream：
+Exporter 通过 WebSocket 持续消费 Mihomo External Controller 的两个 JSON stream：
 
 - `/traffic`：提供全局实时速率和累计流量。
 - `/connections?interval=<milliseconds>`：提供当前全部活跃连接的周期快照。
@@ -184,9 +184,9 @@ mihomo_client_proxy,client=...,proxy=...
 
 命令入口将解析后的分组配置传入 `internal/app.Run`。应用先绑定 Prometheus 监听端口，再启动采集任务，绑定失败会直接返回错误。HTTP 服务错误也会触发取消；正常终止会取消请求并等待所有后台任务结束。HTTP server 在优雅关闭超时后强制关闭连接。
 
-两个 stream 使用独立 goroutine。EOF、连接重置、Mihomo 重启、非 2xx HTTP 响应或临时网络错误都会使连接状态变为断开，并在 `RECONNECT_INTERVAL` 后重试，避免 tight loop。
+两个 stream 使用独立 goroutine，并共用同一套 WebSocket 握手、Bearer 认证、消息读取和关闭逻辑。`/connections` 的 `interval` 查询参数由 Mihomo 服务端用于控制 snapshot 推送周期。
 
-HTTP stream 使用 `json.Decoder` 直接解析连续 JSON 对象，不受 `bufio.Scanner` 默认 token 大小限制。请求通过父级 `context.Context` 管理。
+连接重置、Mihomo 重启、WebSocket 握手失败或临时网络错误都会使连接状态变为断开，并在 `RECONNECT_INTERVAL` 后重试，避免 tight loop。单条 WebSocket 消息上限设置为 32 MiB，以容纳较大的连接快照。连接和读取均通过父级 `context.Context` 管理。
 
 收到 SIGINT 或 SIGTERM 后：
 

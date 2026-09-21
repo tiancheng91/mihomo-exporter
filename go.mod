@@ -3,6 +3,7 @@ module github.com/tiancheng91/mihomo-exporter
 go 1.23
 
 require (
+	github.com/coder/websocket v1.8.15
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.55.0
 )

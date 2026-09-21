@@ -2,7 +2,6 @@ package mihomo
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -10,7 +9,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 )
+
+const maxStreamMessageSize = 32 << 20
 
 type Traffic struct {
 	Up        uint64 `json:"up"`
@@ -53,9 +57,9 @@ func NewClient(baseURL, secret string, timeout time.Duration) *Client {
 }
 
 func (c *Client) StreamTraffic(ctx context.Context, receive func(Traffic)) error {
-	return c.stream(ctx, "/traffic", nil, func(dec *json.Decoder) error {
+	return c.stream(ctx, "/traffic", nil, func(conn *websocket.Conn) error {
 		var v Traffic
-		if err := dec.Decode(&v); err != nil {
+		if err := wsjson.Read(ctx, conn, &v); err != nil {
 			return err
 		}
 		receive(v)
@@ -65,9 +69,9 @@ func (c *Client) StreamTraffic(ctx context.Context, receive func(Traffic)) error
 
 func (c *Client) StreamConnections(ctx context.Context, interval time.Duration, receive func(ConnectionsSnapshot)) error {
 	query := url.Values{"interval": {strconv.FormatInt(interval.Milliseconds(), 10)}}
-	return c.stream(ctx, "/connections", query, func(dec *json.Decoder) error {
+	return c.stream(ctx, "/connections", query, func(conn *websocket.Conn) error {
 		var v ConnectionsSnapshot
-		if err := dec.Decode(&v); err != nil {
+		if err := wsjson.Read(ctx, conn, &v); err != nil {
 			return err
 		}
 		receive(v)
@@ -75,28 +79,35 @@ func (c *Client) StreamConnections(ctx context.Context, interval time.Duration, 
 	})
 }
 
-func (c *Client) stream(ctx context.Context, path string, query url.Values, decode func(*json.Decoder) error) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+path, nil)
+func (c *Client) stream(ctx context.Context, path string, query url.Values, read func(*websocket.Conn) error) error {
+	endpoint, err := url.Parse(c.baseURL + path)
 	if err != nil {
-		return err
+		return fmt.Errorf("build %s URL: %w", path, err)
 	}
-	if len(query) > 0 {
-		req.URL.RawQuery = query.Encode()
+	switch endpoint.Scheme {
+	case "http":
+		endpoint.Scheme = "ws"
+	case "https":
+		endpoint.Scheme = "wss"
+	default:
+		return fmt.Errorf("unsupported Mihomo URL scheme %q", endpoint.Scheme)
 	}
+	endpoint.RawQuery = query.Encode()
+	header := make(http.Header)
 	if c.secret != "" {
-		req.Header.Set("Authorization", "Bearer "+c.secret)
+		header.Set("Authorization", "Bearer "+c.secret)
 	}
-	resp, err := c.http.Do(req)
+	conn, response, err := websocket.Dial(ctx, endpoint.String(), &websocket.DialOptions{HTTPClient: c.http, HTTPHeader: header})
 	if err != nil {
-		return err
+		if response != nil {
+			return fmt.Errorf("%s WebSocket handshake returned %s: %w", path, response.Status, err)
+		}
+		return fmt.Errorf("connect %s WebSocket: %w", path, err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("%s returned %s", path, resp.Status)
-	}
-	dec := json.NewDecoder(resp.Body)
+	defer conn.CloseNow()
+	conn.SetReadLimit(maxStreamMessageSize)
 	for {
-		if err := decode(dec); err != nil {
+		if err := read(conn); err != nil {
 			return err
 		}
 	}

@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-21
+
 ### Added
 
 - 增加 Linux systemd 服务安装、配置和运维示例。
@@ -14,6 +16,10 @@
 
 - GitHub Actions 升级到 Node.js 24 运行时对应版本。
 - README 按从简单到复杂的顺序调整，并增加单行快速启动示例。
+
+### Fixed
+
+- `/traffic` 和 `/connections` 统一使用 WebSocket；修复普通 HTTP GET 只返回一次 connections snapshot，导致 exporter 持续重连且 `CONNECTION_INTERVAL` 不生效的问题。
 
 ## [0.1.0] - 2026-09-21
 
@@ -38,5 +44,6 @@
 - 监听端口失败返回非零退出码，关闭时等待后台任务退出。
 - 拒绝小于 1 毫秒或非整毫秒的连接快照间隔，避免请求参数被截断。
 
-[Unreleased]: https://github.com/tiancheng91/mihomo-exporter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tiancheng91/mihomo-exporter/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/tiancheng91/mihomo-exporter/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/tiancheng91/mihomo-exporter/releases/tag/v0.1.0

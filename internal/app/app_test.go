@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -11,7 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/tiancheng91/mihomo-exporter/internal/config"
+	"github.com/tiancheng91/mihomo-exporter/internal/mihomo"
 )
 
 func TestListenFailureReturnsError(t *testing.T) {
@@ -31,14 +33,18 @@ func TestCancellationStopsStreamsAndRun(t *testing.T) {
 	started := make(chan struct{}, 2)
 	stopped := make(chan struct{}, 2)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/traffic" {
-			fmt.Fprintln(w, "{}")
-		} else {
-			fmt.Fprintln(w, "{\"connections\":[]}")
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
 		}
-		w.(http.Flusher).Flush()
+		defer conn.CloseNow()
+		if r.URL.Path == "/connections" {
+			_ = wsjson.Write(r.Context(), conn, mihomo.ConnectionsSnapshot{})
+		} else {
+			_ = wsjson.Write(r.Context(), conn, mihomo.Traffic{})
+		}
 		started <- struct{}{}
-		<-r.Context().Done()
+		_, _, _ = conn.Read(context.Background())
 		stopped <- struct{}{}
 	}))
 	defer server.Close()

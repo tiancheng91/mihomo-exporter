@@ -42,7 +42,7 @@ Mihomo 地址不同，可以直接通过参数指定：
 - 可选的 Client × Proxy 组合统计
 - Prometheus `/metrics` 和 `/healthz`
 - Telegraf Influx Line Protocol 推送
-- 断线自动重连和安全的推送失败重试
+- WebSocket 持续采集、断线自动重连和安全的推送失败重试
 - Linux、macOS、Windows 的 amd64/arm64 Release 包
 
 ## 使用前准备
