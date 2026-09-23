@@ -6,6 +6,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- 增加 Grafana V2 面板模板及导入说明；数据源采用可选择的 Prometheus 变量，移除固定 UID 和原实例元数据。
+- README 补充 Grafana 面板导入、数据源和节点选择步骤，以及实际面板预览图。
+
 ## [0.1.1] - 2026-09-21
 
 ### Added

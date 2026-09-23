@@ -129,6 +129,21 @@ scrape_configs:
 
 完整指标可直接查看 `/metrics`，也可参考[架构文档](docs/design/architecture.md#prometheus-指标)。
 
+## Grafana 面板
+
+提供可导入的 [Grafana 面板模板](docs/grafana/mihomo-exporter.json)，覆盖累计流量、速率、Client/Proxy 流量、连接跟踪比率和 Stream 状态。
+
+1. 确认 Prometheus 已成功采集 exporter 的 `/metrics`，并在 Grafana 中添加该 Prometheus 数据源。
+2. 下载 [面板 JSON](docs/grafana/mihomo-exporter.json)（在 GitHub 文件页选择下载原始文件），在 Grafana 的 **Dashboards → Import** 中上传。
+3. 打开面板，在顶部「数据源」选择自己的 Prometheus，在「节点」选择 exporter 实例；选择 `All` 可查看全部实例。
+4. 使用右上角时间范围和刷新间隔查看趋势，默认每 30 秒刷新。保存面板即可保留自己的数据源选择。
+
+模板不绑定固定数据源 UID，使用 `dashboard.grafana.app/v2` 格式，需要支持该格式的 Grafana。格式要求和指标口径见 [导入说明](docs/grafana/README.md)。
+
+以下为面板预览，截图中的数据源名称、节点和数值仅为示例：
+
+![Mihomo Exporter Grafana 面板预览：累计流量、连接跟踪比率、流量趋势和 Client/Proxy 统计](docs/grafana/preview.png)
+
 ## Telegraf
 
 设置以下环境变量启用 Telegraf 推送：
